@@ -1,29 +1,38 @@
-# PQDT PQStem backbone with packed FAB semantic/geometric masking.
+# Full PQDT backbone/tail with lite packed FAB sparse/geometric/random masking.
 #
-# Use with asymdsd.run.ssrl_pqstem_fab_packed_cli and STAMPA target-only data.
+# Use with asymdsd.run.ssrl_pqdt_lite_fab_packed_cli and STAMPA target-only data.
+# Exported PQDT components can be loaded by /home/ubuntu/code/PQDT finetuning.
+# mask_generator.multi_mask remains 4 to define the candidate paths; the lite
+# model samples one candidate path per training iteration and trains it alone.
 
-pqstem_in_chans: 256
-pqstem_enc_attn: [ge_attn, attn, attn, attn, attn, attn]
-pqstem_mlp_ratio: 2.0
-pqstem_drop_rate: 0.0
-pqstem_attn_drop_rate: 0.0
-pqstem_transdown_fps: [512, 128]
-pqstem_transdown_dims: [64, 256]
-pqstem_transdown_num_heads: [1, 4]
-pqstem_transdown_sa_depth: [2, 2]
-pqstem_transdown_k: [16, 16]
-pqstem_transdown_use_attn: false
-pqstem_enable_transup_reconstruction: true
-pqstem_transup_num_seed: 512
-pqstem_transup_up_factors: [1, 4, 4]
-pqstem_transup_n_knn: 16
-pqstem_transup_radius: 1.0
-pqstem_transup_interpolate: three
-pqstem_transup_attn_channel: true
-pqstem_transup_cd_weight: 1.0
-pqstem_transup_cd_every_n_steps: 10
-pqstem_transup_cd_start_epoch: 0
-pqstem_transup_cd_warmup_epochs: 10
+pqdt_in_chans: 256
+pqdt_stem_enc_attn: [attn, attn, attn]
+pqdt_enc_attn: [attn, attn, attn]
+pqdt_dec_attn: [attn, attn, attn, attn, attn, attn]
+pqdt_mlp_ratio: 2.0
+pqdt_drop_rate: 0.0
+pqdt_attn_drop_rate: 0.0
+pqdt_transdown_fps: [512, 128]
+pqdt_transdown_dims: [64, 256]
+pqdt_transdown_num_heads: [1, 4]
+pqdt_transdown_sa_depth: [2, 2]
+pqdt_transdown_k: [16, 16]
+pqdt_transdown_use_attn: false
+pqdt_num_pseudo: 384
+pqdt_num_query: 512
+pqdt_tau0: 1.0
+pqdt_total_epochs:
+pqdt_r_sph: 0.8
+pqdt_in_q: true
+pqdt_up_factors: [1, 4, 4]
+pqdt_up_n_knn: 16
+pqdt_up_radius: 1.0
+pqdt_up_interpolate: three
+pqdt_up_attn_channel: true
+pqdt_cd_weight: 1.0
+pqdt_cd_every_n_steps: 10
+pqdt_cd_start_epoch: 0
+pqdt_cd_warmup_epochs: 10
 
 steps_per_epoch:
 training_mode: CLS_MASK
@@ -50,25 +59,8 @@ encoder_config:
   bias: false
   allow_grad_ckpt: true
 
+# PQDT tail replaces the AsymDSD masked-patch predictor.
 predictor_config:
-  class_path: asymdsd.layers.TransformerDecoderConfig
-  init_args:
-    embed_dim: 192
-    num_heads: 3
-    num_layers: 6
-    hidden_ratio: 4.0
-    norm_layer: asymdsd.layers.RMSNorm
-    act_layer: torch.nn.GELU
-    dropout_p: 0.0
-    drop_path_p: 0.0
-    uniform_drop_path: false
-    efficient_drop_path: true
-    add_pos_enc_every_layer: true
-    layer_scale_init:
-    bias: false
-    allow_grad_ckpt: false
-    concat_tgt_memory: false
-    self_attention: false
 
 projection_head_config:
   out_dim: 4096
@@ -82,7 +74,7 @@ projection_head_config:
 mask_generator:
   class_path: asymdsd.components.RandomPatchMasking
   init_args:
-    mask_ratio: 0.6
+    mask_ratio: 0.65
     multi_mask: 4
 
 sparse_visible_mask_ratio: 0.65
@@ -138,7 +130,6 @@ classification_loss_weight:
 classification_label_smoothing: 0.2
 mask_probability: 1.0
 cls_predictor: DISABLED
-# STAMPA is target-only: no extra unmasked global view or local-crop CLS loss.
 add_unmasked_global_cls: false
 patch_instance_norm: false
 disable_projection: false

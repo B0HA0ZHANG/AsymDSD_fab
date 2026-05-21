@@ -28,8 +28,8 @@ pqdt_up_radius: 1.0
 pqdt_up_interpolate: three
 pqdt_up_attn_channel: true
 pqdt_cd_weight: 1.0
-pqdt_cd_every_n_steps: 5
-pqdt_cd_start_epoch: 20
+pqdt_cd_every_n_steps: 10
+pqdt_cd_start_epoch: 0
 pqdt_cd_warmup_epochs: 10
 
 steps_per_epoch:

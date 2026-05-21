@@ -23,3 +23,4 @@ objaverse
 psutil
 open3d
 gdown
+timm

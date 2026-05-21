@@ -12,7 +12,7 @@ init_args:
   cache_dir:
   eval_split_ratio: 0.1
   split_seed: 0
-  batch_size: 96
-  num_workers_train: 10
+  batch_size: 128
+  num_workers_train: 12
   num_workers_val_test: 0
   pin_memory: true

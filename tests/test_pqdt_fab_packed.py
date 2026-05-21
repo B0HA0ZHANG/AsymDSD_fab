@@ -19,12 +19,15 @@ def _import_or_skip(import_fn):
         pytest.skip(f"AsymDSD import dependencies are not usable: {exc}")
 
 
-def _tiny_model():
+def _tiny_model(
+    model_module: str = "asymdsd.models.asymdsd_pqdt_fab_packed",
+    model_class_name: str = "PQDTPackedFusedAttnBlockAsymDSD",
+):
     (
         RandomPatchMasking,
         ProjectionHeadConfig,
         TransformerEncoderConfig,
-        PQDTPackedFusedAttnBlockAsymDSD,
+        model_module_obj,
     ) = _import_or_skip(
         lambda: (
             __import__(
@@ -40,13 +43,14 @@ def _tiny_model():
                 fromlist=["TransformerEncoderConfig"],
             ).TransformerEncoderConfig,
             __import__(
-                "asymdsd.models.asymdsd_pqdt_fab_packed",
-                fromlist=["PQDTPackedFusedAttnBlockAsymDSD"],
-            ).PQDTPackedFusedAttnBlockAsymDSD,
+                model_module,
+                fromlist=[model_class_name],
+            ),
         )
     )
+    model_class = getattr(model_module_obj, model_class_name)
 
-    model = PQDTPackedFusedAttnBlockAsymDSD(
+    model = model_class(
         max_epochs=1,
         steps_per_epoch=1,
         batch_size=2,
@@ -91,6 +95,13 @@ def _tiny_model():
     model.setup()
     model.on_fit_start()
     return model
+
+
+def _tiny_lite_model():
+    return _tiny_model(
+        model_module="asymdsd.models.asymdsd_pqdt_lite_fab_packed",
+        model_class_name="PQDTLitePackedFusedAttnBlockAsymDSD",
+    )
 
 
 def test_pqdt_pseudo_stage_decoder_1_uses_four_blocks():
@@ -238,6 +249,29 @@ def test_pqdt_packed_fab_tiny_training_step_smoke():
     assert output["cls_loss"] is not None
     assert torch.isfinite(output["pqdt_cd_loss"])
     assert output["pqdt_reconstructions"][-1].shape == (2, 16, 3)
+
+
+def test_pqdt_lite_packed_fab_tiny_training_step_smoke():
+    _skip_if_local_pqdt_deps_unavailable()
+    model = _tiny_lite_model()
+    output = model.training_step({"points": torch.randn(2, 32, 3)}, 0)
+
+    assert torch.isfinite(output["loss"])
+    assert output["patch_loss"] is not None
+    assert output["cls_loss"] is not None
+    assert torch.isfinite(output["pqdt_cd_loss"])
+    assert output["pqdt_reconstructions"][-1].shape == (2, 16, 3)
+    assert output["cls_preds"].shape == (2, 64)
+
+    mask_components = output["mask_components"]
+    assert len(mask_components["path_masks"]) == 1
+    assert len(mask_components["path_names"]) == 1
+    assert mask_components["selected_path_name"] in {
+        "sparse_visible",
+        "sparse_masked",
+        "geometric_halfspace",
+        "random",
+    }
 
 
 def test_pqdt_reconstruction_gradients_are_isolated():
