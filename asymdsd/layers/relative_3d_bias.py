@@ -8,15 +8,18 @@ from ..components import FactoryConfig
 
 @dataclass
 class Relative3DBiasConfig(FactoryConfig):
-    num_heads: int = 6
+    num_heads: int | None = None
     hidden_dim: int = 64
     use_distance: bool = True
 
     @property
-    def CLS(self) -> type["Relative3DBias"]:
+    def CLS(self):
         return Relative3DBias
 
     def instantiate(self) -> "Relative3DBias":
+        if self.num_heads is None:
+            raise ValueError("num_heads must be specified for Relative3DBias.")
+
         return Relative3DBias(
             num_heads=self.num_heads,
             hidden_dim=self.hidden_dim,
@@ -32,7 +35,9 @@ class Relative3DBias(nn.Module):
         use_distance: bool = True,
     ) -> None:
         super().__init__()
+        self.num_heads = num_heads
         self.use_distance = use_distance
+
         in_dim = 4 if use_distance else 3
         self.mlp = nn.Sequential(
             nn.Linear(in_dim, hidden_dim, bias=True),

@@ -39,6 +39,21 @@ patch_loss_a_only: false
 # relative_3d_bias is enabled.
 use_varlen_flash_attn: true
 
+# --- 3D_bias_only port ---
+# Match the older ssrl_model_encoder_bias_only.yaml setting: add a learned
+# relative 3D attention bias in the encoder, with no extra auxiliary losses.
+# num_heads is synced from encoder_config.num_heads by the Transformer.
+encoder_config:
+  relative_3d_bias:
+    class_path: asymdsd.layers.Relative3DBiasConfig
+    init_args:
+      num_heads: 6
+      hidden_dim: 64
+      use_distance: true
+
+# Current repo name for the old relative_3d_bias_scale knob.
+attn_bias_scale: 1.0
+
 # --- Block parameters (for semantic block+sparse paths) ---
 # Each block center expands to ~10% of patches via KNN
 block_ratio: 0.1
