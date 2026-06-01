@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, Literal, Union
 
 from lightning.fabric.utilities.types import _PATH
@@ -8,11 +9,24 @@ from wandb.util import generate_id
 from wandb.wandb_run import Run
 
 
+_DEFAULT_SAVE_DIR_ENV = "ASYMDSD_WANDB_SAVE_DIR"
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _resolve_save_dir(save_dir: _PATH | None) -> str:
+    if save_dir is None:
+        save_dir = os.environ.get(_DEFAULT_SAVE_DIR_ENV, _PROJECT_ROOT)
+
+    path = Path(save_dir).expanduser().resolve()
+    path.mkdir(parents=True, exist_ok=True)
+    return str(path)
+
+
 class WandbLogger(_WandbLogger):
     def __init__(
         self,
         name: str | None = None,
-        save_dir: _PATH = ".",
+        save_dir: _PATH | None = None,
         version: str | None = None,
         offline: bool = False,
         dir: _PATH | None = None,
@@ -31,6 +45,8 @@ class WandbLogger(_WandbLogger):
             id = generate_id()
 
         os.environ["WANDB__SERVICE_WAIT"] = "300"
+        save_dir = _resolve_save_dir(save_dir)
+        os.environ.setdefault("WANDB_DIR", save_dir)
 
         super().__init__(
             name,

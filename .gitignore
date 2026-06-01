@@ -163,6 +163,7 @@ asymdsd/data/**/data/*
 !asymdsd/data/**/data/.gitkeep
 lightning_logs/*
 wandb/*
+!wandb/.gitkeep
 logs/*
 data/*
 !data/.gitkeep
